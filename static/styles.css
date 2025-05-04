@@ -1,0 +1,36 @@
+/* static/styles.css */
+body {
+    font-family: Arial, sans-serif;
+    padding: 20px;
+    background-color: #f4f4f4;
+}
+h2 {
+    color: #333;
+}
+form input, form button {
+    display: block;
+    margin: 10px 0;
+    padding: 10px;
+}
+button {
+    background-color: #007bff;
+    color: white;
+    border: none;
+}
+table {
+    width: 80%;
+    margin-top: 20px;
+    border-collapse: collapse;
+}
+td, th {
+    padding: 10px;
+    border: 1px solid #ccc;
+}
+.product-card {
+    background: #fff;
+    padding: 15px;
+    margin: 10px;
+    border: 1px solid #ddd;
+    display: inline-block;
+    width: 200px;
+}
