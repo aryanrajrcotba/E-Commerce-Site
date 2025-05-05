@@ -1,390 +1,117 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Create Your Account | ShopEase</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        :root {
-            --primary: #2563eb;
-            --primary-dark: #1d4ed8;
-            --secondary: #f59e0b;
-            --dark: #1e293b;
-            --light: #f8fafc;
-            --gray: #64748b;
-            --light-gray: #e2e8f0;
-            --danger: #ef4444;
-            --success: #10b981;
-        }
-        
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        
-        body {
-            background-color: #f1f5f9;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            padding: 2rem;
-        }
-        
-        .register-container {
-            background-color: white;
-            border-radius: 16px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-            width: 100%;
-            max-width: 500px;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-        }
-        
-        .register-header {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-            color: white;
-            padding: 2rem;
-            text-align: center;
-        }
-        
-        .register-header h2 {
-            font-size: 1.8rem;
-            margin-bottom: 0.5rem;
-        }
-        
-        .register-header p {
-            opacity: 0.9;
-            font-size: 0.95rem;
-        }
-        
-        .register-form {
-            padding: 2rem;
-        }
-        
-        .form-group {
-            margin-bottom: 1.5rem;
-            position: relative;
-        }
-        
-        .form-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 500;
-            color: var(--dark);
-            font-size: 0.95rem;
-        }
-        
-        .input-field {
-            width: 100%;
-            padding: 0.9rem 1rem;
-            border: 1px solid var(--light-gray);
-            border-radius: 8px;
-            font-size: 1rem;
-            transition: all 0.3s;
-            background-color: #f8fafc;
-        }
-        
-        .input-field:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-            background-color: white;
-        }
-        
-        .input-field::placeholder {
-            color: var(--gray);
-            opacity: 0.6;
-        }
-        
-        .input-icon {
-            position: absolute;
-            right: 1rem;
-            top: 2.5rem;
-            color: var(--gray);
-        }
-        
-        .password-toggle {
-            position: absolute;
-            right: 1rem;
-            top: 2.5rem;
-            color: var(--gray);
-            cursor: pointer;
-        }
-        
-        .btn {
-            width: 100%;
-            padding: 1rem;
-            border: none;
-            border-radius: 8px;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-        }
-        
-        .btn-primary {
-            background-color: var(--primary);
-            color: white;
-        }
-        
-        .btn-primary:hover {
-            background-color: var(--primary-dark);
-        }
-        
-        .divider {
-            display: flex;
-            align-items: center;
-            margin: 1.5rem 0;
-            color: var(--gray);
-            font-size: 0.9rem;
-        }
-        
-        .divider::before, .divider::after {
-            content: "";
-            flex: 1;
-            border-bottom: 1px solid var(--light-gray);
-        }
-        
-        .divider::before {
-            margin-right: 1rem;
-        }
-        
-        .divider::after {
-            margin-left: 1rem;
-        }
-        
-        .social-login {
-            display: flex;
-            gap: 1rem;
-            margin-bottom: 1.5rem;
-        }
-        
-        .social-btn {
-            flex: 1;
-            padding: 0.8rem;
-            border-radius: 8px;
-            border: 1px solid var(--light-gray);
-            background-color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-        
-        .social-btn:hover {
-            background-color: #f8fafc;
-        }
-        
-        .social-btn i {
-            font-size: 1.2rem;
-        }
-        
-        .google-btn {
-            color: #db4437;
-        }
-        
-        .facebook-btn {
-            color: #4267b2;
-        }
-        
-        .login-link {
-            text-align: center;
-            margin-top: 1.5rem;
-            color: var(--gray);
-            font-size: 0.95rem;
-        }
-        
-        .login-link a {
-            color: var(--primary);
-            text-decoration: none;
-            font-weight: 500;
-        }
-        
-        .login-link a:hover {
-            text-decoration: underline;
-        }
-        
-        .form-footer {
-            margin-top: 1rem;
-            font-size: 0.8rem;
-            color: var(--gray);
-            text-align: center;
-        }
-        
-        .form-footer a {
-            color: var(--primary);
-            text-decoration: none;
-        }
-        
-        .form-footer a:hover {
-            text-decoration: underline;
-        }
-        
-        /* Password strength indicator */
-        .password-strength {
-            margin-top: 0.5rem;
-            height: 4px;
-            background-color: var(--light-gray);
-            border-radius: 2px;
-            overflow: hidden;
-        }
-        
-        .strength-bar {
-            height: 100%;
-            width: 0%;
-            background-color: var(--danger);
-            transition: width 0.3s, background-color 0.3s;
-        }
-        
-        /* Responsive adjustments */
-        @media (max-width: 576px) {
-            body {
-                padding: 1rem;
-            }
-            
-            .register-container {
-                border-radius: 12px;
-            }
-            
-            .register-header {
-                padding: 1.5rem;
-            }
-            
-            .register-form {
-                padding: 1.5rem;
-            }
-            
-            .social-login {
-                flex-direction: column;
-            }
-        }
-    </style>
-</head>
-<body>
-    <div class="register-container">
-        <div class="register-header">
-            <h2>Create Your Account</h2>
-            <p>Join thousands of happy customers shopping with us</p>
-        </div>
-        
-        <form method="POST" class="register-form">
-            <div class="form-group">
-                <label for="name">Full Name</label>
-                <input type="text" id="name" name="name" class="input-field" placeholder="Aryan Raj" required>
-                <i class="fas fa-user input-icon"></i>
-            </div>
-            
-            <div class="form-group">
-                <label for="email">Email Address</label>
-                <input type="email" id="email" name="email" class="input-field" placeholder="ar@example.com" required>
-                <i class="fas fa-envelope input-icon"></i>
-            </div>
-            
-            <div class="form-group">
-                <label for="password">Password</label>
-                <input type="password" id="password" name="password" class="input-field" placeholder="At least 8 characters" required>
-                <i class="fas fa-lock input-icon"></i>
-                <i class="fas fa-eye password-toggle" id="togglePassword"></i>
-                <div class="password-strength">
-                    <div class="strength-bar" id="strengthBar"></div>
+{% extends "base.html" %}
+
+{% block title %}Register - E-Commerce Store{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow-sm">
+                <div class="card-body p-5">
+                    <div class="text-center mb-4">
+                        <i class="fas fa-user-plus fa-3x text-primary mb-3"></i>
+                        <h2>Create Account</h2>
+                        <p class="text-muted">Join our community today</p>
+                    </div>
+
+                    <form method="POST" action="{{ url_for('register') }}">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="name" class="form-label">Full Name</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">
+                                        <i class="fas fa-user"></i>
+                                    </span>
+                                    <input type="text" class="form-control" id="name" name="name" required>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="email" class="form-label">Email address</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">
+                                        <i class="fas fa-envelope"></i>
+                                    </span>
+                                    <input type="email" class="form-control" id="email" name="email" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Password</label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="fas fa-lock"></i>
+                                </span>
+                                <input type="password" class="form-control" id="password" name="password" required>
+                            </div>
+                            <div class="form-text">
+                                Password must be at least 8 characters long and include a number and a special character.
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="address" class="form-label">Address</label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                </span>
+                                <textarea class="form-control" id="address" name="address" rows="3" required></textarea>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="phone" class="form-label">Phone Number</label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="fas fa-phone"></i>
+                                </span>
+                                <input type="tel" class="form-control" id="phone" name="phone" required>
+                            </div>
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-user-plus me-2"></i>Create Account
+                            </button>
+                        </div>
+                    </form>
+
+                    <div class="text-center mt-4">
+                        <p class="mb-0">Already have an account? <a href="{{ url_for('login') }}" class="text-primary">Sign in here</a></p>
+                    </div>
                 </div>
             </div>
-            
-            <div class="form-group">
-                <label for="address">Address (Optional)</label>
-                <input type="text" id="address" name="address" class="input-field" placeholder="123 Sansi">
-                <i class="fas fa-map-marker-alt input-icon"></i>
-            </div>
-            
-            <div class="form-group">
-                <label for="phone">Phone Number (Optional)</label>
-                <input type="tel" id="phone" name="phone" class="input-field" placeholder="+91 765 123-4567">
-                <i class="fas fa-phone input-icon"></i>
-            </div>
-            
-            <button type="submit" class="btn btn-primary">
-                <i class="fas fa-user-plus"></i> Create Account
-            </button>
-            
-            <div class="divider">OR</div>
-            
-            <div class="social-login">
-                <button type="button" class="social-btn google-btn">
-                    <i class="fab fa-google"></i>
-                </button>
-                <button type="button" class="social-btn facebook-btn">
-                    <i class="fab fa-facebook-f"></i>
-                </button>
-            </div>
-            
-            <div class="login-link">
-                Already have an account? <a href="/login">Sign in</a>
-            </div>
-            
-            <div class="form-footer">
-                By creating an account, you agree to our <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>
-            </div>
-        </form>
-    </div>
 
-    <script>
-        // Toggle password visibility
-        const togglePassword = document.querySelector('#togglePassword');
-        const password = document.querySelector('#password');
-        
-        togglePassword.addEventListener('click', function() {
-            const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
-            password.setAttribute('type', type);
-            this.classList.toggle('fa-eye-slash');
-        });
-        
-        // Password strength indicator
-        password.addEventListener('input', function() {
-            const strengthBar = document.getElementById('strengthBar');
-            const strength = calculatePasswordStrength(this.value);
-            
-            strengthBar.style.width = strength.percentage + '%';
-            strengthBar.style.backgroundColor = strength.color;
-        });
-        
-        function calculatePasswordStrength(password) {
-            let strength = 0;
-            
-            // Length check
-            if (password.length > 0) strength += 10;
-            if (password.length >= 4) strength += 10;
-            if (password.length >= 8) strength += 30;
-            if (password.length >= 12) strength += 20;
-            
-            // Complexity checks
-            if (/[A-Z]/.test(password)) strength += 10;
-            if (/[0-9]/.test(password)) strength += 10;
-            if (/[^A-Za-z0-9]/.test(password)) strength += 10;
-            
-            // Cap at 100
-            strength = Math.min(strength, 100);
-            
-            // Determine color
-            let color;
-            if (strength < 30) color = 'var(--danger)';
-            else if (strength < 70) color = 'var(--secondary)';
-            else color = 'var(--success)';
-            
-            return {
-                percentage: strength,
-                color: color
-            };
-        }
-    </script>
-</body>
-</html>
+            <div class="card mt-4 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">Benefits of Registration</h5>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <div class="text-center">
+                                <i class="fas fa-shopping-bag fa-2x text-primary mb-2"></i>
+                                <h6>Easy Shopping</h6>
+                                <small class="text-muted">Quick checkout process</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="text-center">
+                                <i class="fas fa-truck fa-2x text-primary mb-2"></i>
+                                <h6>Order Tracking</h6>
+                                <small class="text-muted">Real-time order updates</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="text-center">
+                                <i class="fas fa-gift fa-2x text-primary mb-2"></i>
+                                <h6>Special Offers</h6>
+                                <small class="text-muted">Exclusive deals and discounts</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

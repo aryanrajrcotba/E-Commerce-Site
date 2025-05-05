@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block title %}{{ product[1] }} - E-Commerce Store{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('index') }}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('products') }}">Products</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ product[1] }}</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            <div class="card border-0 shadow-sm">
+                <img src="{{ product[4] }}" class="card-img-top" alt="{{ product[1] }}" style="height: 400px; object-fit: contain;">
+            </div>
+        </div>
+        <div class="col-md-6">
+            <h1 class="mb-3">{{ product[1] }}</h1>
+            
+            <div class="mb-3">
+                <span class="h3 text-primary">₹{{ "%.2f"|format(product[3]) }}</span>
+                <span class="badge {% if product[5] > 0 %}bg-success{% else %}bg-danger{% endif %} ms-2">
+                    {{ product[5] }} in stock
+                </span>
+            </div>
+
+            <p class="text-muted mb-4">{{ product[2] }}</p>
+
+            <form method="POST" action="{{ url_for('add_to_cart', product_id=product[0]) }}" class="mb-4">
+                <div class="row g-3 align-items-center">
+                    <div class="col-auto">
+                        <label for="quantity" class="col-form-label">Quantity:</label>
+                    </div>
+                    <div class="col-auto">
+                        <input type="number" id="quantity" name="quantity" class="form-control" value="1" min="1" max="{{ product[5] }}" {% if product[5] == 0 %}disabled{% endif %}>
+                    </div>
+                    <div class="col-auto">
+                        <button type="submit" class="btn btn-primary" {% if product[5] == 0 %}disabled{% endif %}>
+                            <i class="fas fa-cart-plus me-2"></i>Add to Cart
+                        </button>
+                    </div>
+                </div>
+            </form>
+
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Product Details</h5>
+                    <table class="table table-sm">
+                        <tr>
+                            <th style="width: 30%">SKU</th>
+                            <td>PRD{{ product[0] }}</td>
+                        </tr>
+                        <tr>
+                            <th>Category</th>
+                            <td>Electronics</td>
+                        </tr>
+                        <tr>
+                            <th>Brand</th>
+                            <td>E-Commerce Store</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Shipping Information</h5>
+                    <ul class="list-unstyled mb-0">
+                        <li class="mb-2">
+                            <i class="fas fa-truck text-primary me-2"></i>
+                            Free shipping on orders over $50
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-undo text-primary me-2"></i>
+                            30-day return policy
+                        </li>
+                        <li>
+                            <i class="fas fa-shield-alt text-primary me-2"></i>
+                            2-year warranty
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-5">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Product Description</h5>
+                    <p class="card-text">{{ product[2] }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

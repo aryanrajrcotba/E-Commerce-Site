@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}My Orders - E-Commerce Store{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <h2 class="mb-4">My Orders</h2>
+
+    {% if orders %}
+        {% for order in orders %}
+            <div class="card mb-4 shadow-sm">
+                <div class="card-header bg-white">
+                    <div class="row align-items-center">
+                        <div class="col-md-6">
+                            <h5 class="mb-0">Order #{{ order[0] }}</h5>
+                            <small class="text-muted">Placed on {{ order[1].strftime('%B %d, %Y %I:%M %p') }}</small>
+                        </div>
+                        <div class="col-md-6 text-md-end">
+                            <span class="badge bg-primary">₹{{ "%.2f"|format(order[2]) }}</span>
+                            <span class="badge bg-info">{{ order[3] }}</span>
+                            <span class="badge bg-success">{{ order[4] }}</span>
+                            <span class="badge bg-secondary">{{ order[5] }}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Product</th>
+                                    <th>Quantity</th>
+                                    <th>Price</th>
+                                    <th>Subtotal</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in order_items[order[0]] %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <img src="{{ item[5] }}" alt="{{ item[3] }}" class="me-3" style="width: 50px; height: 50px; object-fit: cover;">
+                                            <div>
+                                                <h6 class="mb-0">{{ item[3] }}</h6>
+                                                <small class="text-muted">SKU: PRD{{ item[0] }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>{{ item[1] }}</td>
+                                    <td>₹{{ "%.2f"|format(item[4]) }}</td>
+                                    <td>₹{{ "%.2f"|format(item[2]) }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="card-footer bg-white">
+                    <div class="row align-items-center">
+                        <div class="col-md-6">
+                            <small class="text-muted">
+                                <i class="fas fa-truck me-1"></i>
+                                Estimated delivery: {{ (order[1] + timedelta(days=3)).strftime('%B %d, %Y') }}
+                            </small>
+                        </div>
+                        <div class="col-md-6 text-md-end">
+                            <span class="text-muted me-3">Payment Method: {{ order[5] }}</span>
+                            <span class="badge bg-success">{{ order[4] }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-shopping-bag fa-3x text-muted mb-3"></i>
+            <h4>No Orders Yet</h4>
+            <p class="text-muted">You haven't placed any orders yet.</p>
+            <a href="{{ url_for('index') }}" class="btn btn-primary">
+                <i class="fas fa-shopping-cart me-2"></i>Start Shopping
+            </a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %} 
