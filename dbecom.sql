@@ -23,7 +23,9 @@ CREATE TABLE IF NOT EXISTS products (
     stock INT NOT NULL DEFAULT 0,
     category VARCHAR(50) NOT NULL,
     image_url VARCHAR(255) NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    seller_id INT,
+    FOREIGN KEY (seller_id) REFERENCES sellers(seller_id)
 );
 
 -- Create cart table
@@ -45,7 +47,10 @@ CREATE TABLE IF NOT EXISTS orders (
     total_amount DECIMAL(10,2) NOT NULL,
     order_status VARCHAR(20) NOT NULL DEFAULT 'Pending',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(user_id)
+    seller_approval_status VARCHAR(20) DEFAULT 'Pending',
+    seller_id INT,
+    FOREIGN KEY (user_id) REFERENCES users(user_id),
+    FOREIGN KEY (seller_id) REFERENCES sellers(seller_id)
 );
 
 -- Create order_items table
@@ -72,6 +77,16 @@ CREATE TABLE IF NOT EXISTS payments (
     FOREIGN KEY (user_id) REFERENCES users(user_id)
 );
 
+-- Create sellers table
+CREATE TABLE IF NOT EXISTS sellers (
+    seller_id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(100) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    phone VARCHAR(20) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Insert sample products
 INSERT INTO products (name, description, price, stock, category, image_url) VALUES
 ('iPhone 13 Pro', 'Latest Apple iPhone with A15 Bionic chip, Pro camera system, and Super Retina XDR display.', 999.99, 50, 'Electronics', 'https://images.unsplash.com/photo-1632661674596-79bd3e16b0c0?w=500'),
@@ -90,6 +105,14 @@ INSERT INTO products (name, description, price, stock, category, image_url) VALU
 -- Insert sample user (password: test123)
 INSERT INTO users (name, email, password, address, phone) VALUES
 ('Test User', 'test@example.com', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewYpR1IOBY5GJQHy', '123 Test Street, Test City, TC 12345', '1234567890');
+
+-- Insert sample seller (password: seller123)
+INSERT INTO sellers (name, email, password, phone) VALUES
+('Test Seller', 'seller@example.com', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewYpR1IOBY5GJQHy', '9876543210');
+
+-- Insert new seller (password: 123456)
+INSERT INTO sellers (name, email, password, phone) VALUES
+('Aryan Raj', 'aryanraj@gmail.com', '$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW', '9876543210');
 
 -- Sample cart (adding to cart)
 INSERT INTO cart (user_id, product_id, quantity) VALUES
@@ -229,4 +252,60 @@ BEGIN
     END IF;
 END//
 DELIMITER ;
+
+-- Update sample products with seller_id
+UPDATE products SET seller_id = 1 WHERE product_id IN (1, 2, 3, 4);
+
+-- Add seller approval trigger
+DELIMITER //
+CREATE TRIGGER after_seller_approval
+AFTER UPDATE ON orders
+FOR EACH ROW
+BEGIN
+    IF NEW.seller_approval_status = 'Approved' THEN
+        UPDATE orders SET order_status = 'Processing' WHERE order_id = NEW.order_id;
+    ELSEIF NEW.seller_approval_status = 'Rejected' THEN
+        UPDATE orders SET order_status = 'Cancelled' WHERE order_id = NEW.order_id;
+    END IF;
+END//
+DELIMITER ;
+
+-- Add seller dashboard view
+CREATE VIEW seller_dashboard AS
+SELECT 
+    o.order_id,
+    o.created_at,
+    o.total_amount,
+    o.order_status,
+    o.seller_approval_status,
+    p.payment_status,
+    p.payment_method,
+    u.name as customer_name,
+    u.email as customer_email,
+    u.phone as customer_phone,
+    u.address as customer_address
+FROM orders o
+JOIN payments p ON o.order_id = p.order_id
+JOIN users u ON o.user_id = u.user_id
+WHERE o.seller_id IS NOT NULL;
+
+-- Add seller orders view
+CREATE VIEW seller_orders AS
+SELECT 
+    o.order_id,
+    o.created_at,
+    o.total_amount,
+    o.order_status,
+    o.seller_approval_status,
+    p.payment_status,
+    p.payment_method,
+    u.name as customer_name,
+    GROUP_CONCAT(CONCAT(pr.name, ' (', oi.quantity, ')') SEPARATOR ', ') as products
+FROM orders o
+JOIN payments p ON o.order_id = p.order_id
+JOIN users u ON o.user_id = u.user_id
+JOIN order_items oi ON o.order_id = oi.order_id
+JOIN products pr ON oi.product_id = pr.product_id
+WHERE o.seller_id IS NOT NULL
+GROUP BY o.order_id;
 

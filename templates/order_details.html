@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block title %}Order Details - E-Commerce Store{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0">Order #{{ order.order_id }}</h4>
+                        <a href="{{ url_for('seller_dashboard') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h5>Customer Information</h5>
+                            <p class="mb-1"><strong>Name:</strong> {{ order.customer_name }}</p>
+                            <p class="mb-1"><strong>Email:</strong> {{ order.customer_email }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h5>Order Information</h5>
+                            <p class="mb-1"><strong>Date:</strong> {{ order.order_date.strftime('%Y-%m-%d %H:%M') }}</p>
+                            <p class="mb-1"><strong>Status:</strong> 
+                                <span class="badge bg-{{ 'success' if order.order_status == 'completed' else 'warning' }}">
+                                    {{ order.order_status|title }}
+                                </span>
+                            </p>
+                            <p class="mb-1"><strong>Payment Status:</strong> 
+                                <span class="badge bg-{{ 'success' if order.payment_status == 'paid' else 'danger' }}">
+                                    {{ order.payment_status|title }}
+                                </span>
+                            </p>
+                            <p class="mb-1"><strong>Payment Method:</strong> {{ order.payment_method|title }}</p>
+                        </div>
+                    </div>
+
+                    <h5>Order Items</h5>
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Product</th>
+                                    <th>Price</th>
+                                    <th>Quantity</th>
+                                    <th>Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in items %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <img src="{{ item.image_url }}" alt="{{ item.name }}" class="me-3" style="width: 50px; height: 50px; object-fit: cover;">
+                                            <div>{{ item.name }}</div>
+                                        </div>
+                                    </td>
+                                    <td>₹{{ "%.2f"|format(item.price) }}</td>
+                                    <td>{{ item.quantity }}</td>
+                                    <td>₹{{ "%.2f"|format(item.price * item.quantity) }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="3" class="text-end"><strong>Total Amount:</strong></td>
+                                    <td><strong>₹{{ "%.2f"|format(order.total_amount) }}</strong></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+
+                    {% if order.seller_approval_status == 'pending' %}
+                    <div class="d-flex justify-content-end gap-2 mt-4">
+                        <form method="POST" action="{{ url_for('approve_order', order_id=order.order_id) }}">
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-check me-2"></i>Approve Order
+                            </button>
+                        </form>
+                        <form method="POST" action="{{ url_for('reject_order', order_id=order.order_id) }}">
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-times me-2"></i>Reject Order
+                            </button>
+                        </form>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

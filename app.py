@@ -371,5 +371,222 @@ def test_db():
     except Exception as e:
         return f"Database connection failed: {str(e)}"
 
+# Seller routes
+@app.route('/seller/login', methods=['GET', 'POST'])
+def seller_login():
+    if request.method == 'POST':
+        email = request.form.get('email')
+        password = request.form.get('password')
+        
+        cursor = mysql.connection.cursor()
+        cursor.execute('SELECT * FROM sellers WHERE email = %s', (email,))
+        seller = cursor.fetchone()
+        cursor.close()
+        
+        if seller and check_password_hash(seller[3], password):  # password is at index 3
+            session['seller_id'] = seller[0]  # seller_id is at index 0
+            session['seller_name'] = seller[1]  # name is at index 1
+            flash('Welcome back, ' + seller[1] + '!', 'success')
+            return redirect(url_for('seller_dashboard'))
+        else:
+            flash('Invalid email or password', 'error')
+    
+    return render_template('seller_login.html')
+
+@app.route('/seller/logout')
+def seller_logout():
+    session.pop('seller_id', None)
+    session.pop('seller_name', None)
+    flash('You have been logged out', 'info')
+    return redirect(url_for('seller_login'))
+
+@app.route('/seller/dashboard')
+def seller_dashboard():
+    if 'seller_id' not in session:
+        flash('Please login to access the seller dashboard', 'error')
+        return redirect(url_for('seller_login'))
+    
+    cursor = mysql.connection.cursor()
+    
+    # Get seller's products
+    cursor.execute('''
+        SELECT * FROM products 
+        WHERE seller_id = %s 
+        ORDER BY created_at DESC
+    ''', (session['seller_id'],))
+    products = cursor.fetchall()
+    
+    # Get pending orders for seller's products
+    cursor.execute('''
+        SELECT o.*, u.name as customer_name 
+        FROM orders o
+        JOIN users u ON o.user_id = u.user_id
+        JOIN order_items oi ON o.order_id = oi.order_id
+        JOIN products p ON oi.product_id = p.product_id
+        WHERE p.seller_id = %s
+        AND o.seller_approval_status = 'pending'
+        GROUP BY o.order_id
+        ORDER BY o.created_at DESC
+    ''', (session['seller_id'],))
+    orders = cursor.fetchall()
+    
+    cursor.close()
+    
+    return render_template('seller_dashboard.html', 
+                         seller={'name': session['seller_name']},
+                         products=products,
+                         orders=orders)
+
+@app.route('/seller/order/<int:order_id>/approve', methods=['POST'])
+def approve_order(order_id):
+    if 'seller_id' not in session:
+        flash('Please login to approve orders', 'error')
+        return redirect(url_for('seller_login'))
+    
+    cursor = mysql.connection.cursor()
+    cursor.execute('''
+        UPDATE orders 
+        SET seller_approval_status = 'approved',
+            order_status = 'processing'
+        WHERE order_id = %s
+    ''', (order_id,))
+    mysql.connection.commit()
+    cursor.close()
+    
+    flash('Order approved successfully', 'success')
+    return redirect(url_for('seller_dashboard'))
+
+@app.route('/seller/order/<int:order_id>/reject', methods=['POST'])
+def reject_order(order_id):
+    if 'seller_id' not in session:
+        flash('Please login to reject orders', 'error')
+        return redirect(url_for('seller_login'))
+    
+    cursor = mysql.connection.cursor()
+    cursor.execute('''
+        UPDATE orders 
+        SET seller_approval_status = 'rejected',
+            order_status = 'cancelled'
+        WHERE order_id = %s
+    ''', (order_id,))
+    mysql.connection.commit()
+    cursor.close()
+    
+    flash('Order rejected successfully', 'success')
+    return redirect(url_for('seller_dashboard'))
+
+@app.route('/seller/order/<int:order_id>')
+def view_order_details(order_id):
+    if 'seller_id' not in session:
+        flash('Please login to view order details', 'error')
+        return redirect(url_for('seller_login'))
+    
+    cursor = mysql.connection.cursor(dictionary=True)
+    
+    # Get order details
+    cursor.execute('''
+        SELECT o.*, c.name as customer_name, c.email as customer_email
+        FROM orders o
+        JOIN customers c ON o.customer_id = c.customer_id
+        WHERE o.order_id = %s
+    ''', (order_id,))
+    order = cursor.fetchone()
+    
+    if not order:
+        flash('Order not found', 'error')
+        return redirect(url_for('seller_dashboard'))
+    
+    # Get order items
+    cursor.execute('''
+        SELECT oi.*, p.name, p.image_url
+        FROM order_items oi
+        JOIN products p ON oi.product_id = p.product_id
+        WHERE oi.order_id = %s
+    ''', (order_id,))
+    items = cursor.fetchall()
+    
+    cursor.close()
+    
+    return render_template('order_details.html', order=order, items=items)
+
+@app.route('/seller/product/add', methods=['GET', 'POST'])
+def add_product():
+    if 'seller_id' not in session:
+        flash('Please login to add products', 'error')
+        return redirect(url_for('seller_login'))
+    
+    if request.method == 'POST':
+        name = request.form.get('name')
+        description = request.form.get('description')
+        price = request.form.get('price')
+        image_url = request.form.get('image_url')
+        
+        cursor = mysql.connection.cursor()
+        cursor.execute('''
+            INSERT INTO products (name, description, price, image_url, seller_id)
+            VALUES (%s, %s, %s, %s, %s)
+        ''', (name, description, price, image_url, session['seller_id']))
+        mysql.connection.commit()
+        cursor.close()
+        
+        flash('Product added successfully', 'success')
+        return redirect(url_for('seller_dashboard'))
+    
+    return render_template('add_product.html')
+
+@app.route('/seller/product/<int:product_id>/edit', methods=['GET', 'POST'])
+def edit_product(product_id):
+    if 'seller_id' not in session:
+        flash('Please login to edit products', 'error')
+        return redirect(url_for('seller_login'))
+    
+    cursor = mysql.connection.cursor(dictionary=True)
+    
+    if request.method == 'POST':
+        name = request.form.get('name')
+        description = request.form.get('description')
+        price = request.form.get('price')
+        image_url = request.form.get('image_url')
+        
+        cursor.execute('''
+            UPDATE products 
+            SET name = %s, description = %s, price = %s, image_url = %s
+            WHERE product_id = %s AND seller_id = %s
+        ''', (name, description, price, image_url, product_id, session['seller_id']))
+        mysql.connection.commit()
+        
+        flash('Product updated successfully', 'success')
+        return redirect(url_for('seller_dashboard'))
+    
+    cursor.execute('''
+        SELECT * FROM products 
+        WHERE product_id = %s AND seller_id = %s
+    ''', (product_id, session['seller_id']))
+    product = cursor.fetchone()
+    cursor.close()
+    
+    if not product:
+        flash('Product not found', 'error')
+        return redirect(url_for('seller_dashboard'))
+    
+    return render_template('edit_product.html', product=product)
+
+@app.route('/seller/product/<int:product_id>/delete', methods=['POST'])
+def delete_product(product_id):
+    if 'seller_id' not in session:
+        flash('Please login to delete products', 'error')
+        return redirect(url_for('seller_login'))
+    
+    cursor = mysql.connection.cursor()
+    cursor.execute('''
+        DELETE FROM products 
+        WHERE product_id = %s AND seller_id = %s
+    ''', (product_id, session['seller_id']))
+    mysql.connection.commit()
+    cursor.close()
+    
+    flash('Product deleted successfully', 'success')
+    return redirect(url_for('seller_dashboard'))
+
 if __name__ == '__main__':
     app.run(debug=True)
