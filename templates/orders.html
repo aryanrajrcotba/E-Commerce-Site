@@ -24,36 +24,42 @@
                     </div>
                 </div>
                 <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead>
-                                <tr>
-                                    <th>Product</th>
-                                    <th>Quantity</th>
-                                    <th>Price</th>
-                                    <th>Subtotal</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for item in order_items[order[0]] %}
-                                <tr>
-                                    <td>
-                                        <div class="d-flex align-items-center">
-                                            <img src="{{ item[5] }}" alt="{{ item[3] }}" class="me-3" style="width: 50px; height: 50px; object-fit: cover;">
-                                            <div>
-                                                <h6 class="mb-0">{{ item[3] }}</h6>
-                                                <small class="text-muted">SKU: PRD{{ item[0] }}</small>
+                    {% if order[0] in order_items and order_items[order[0]] %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Product</th>
+                                        <th>Quantity</th>
+                                        <th>Price</th>
+                                        <th>Subtotal</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in order_items[order[0]] %}
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <img src="{{ item[5] }}" alt="{{ item[3] }}" class="me-3" style="width: 50px; height: 50px; object-fit: cover;">
+                                                <div>
+                                                    <h6 class="mb-0">{{ item[3] }}</h6>
+                                                    <small class="text-muted">SKU: PRD{{ item[0] }}</small>
+                                                </div>
                                             </div>
-                                        </div>
-                                    </td>
-                                    <td>{{ item[1] }}</td>
-                                    <td>₹{{ "%.2f"|format(item[4]) }}</td>
-                                    <td>₹{{ "%.2f"|format(item[2]) }}</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
+                                        </td>
+                                        <td>{{ item[1] }}</td>
+                                        <td>₹{{ "%.2f"|format(item[4]) }}</td>
+                                        <td>₹{{ "%.2f"|format(item[2]) }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">
+                            No items found for this order.
+                        </div>
+                    {% endif %}
                 </div>
                 <div class="card-footer bg-white">
                     <div class="row align-items-center">

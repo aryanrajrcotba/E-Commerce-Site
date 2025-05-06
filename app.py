@@ -202,37 +202,42 @@ def checkout():
         return redirect(url_for('login'))
 
     if request.method == 'POST':
-        # Create order
-        cur.execute(
-            "INSERT INTO orders (user_id, total_amount, order_status) VALUES (%s, %s, %s)",
-            (user_id, total, 'Pending')
-        )
-        order_id = cur.lastrowid
-
-        # Add order items
-        for item in cart_items:
+        try:
+            # Create order
             cur.execute(
-                "INSERT INTO order_items (order_id, product_id, quantity, subtotal) VALUES (%s, %s, %s, %s)",
-                (order_id, item[0], item[1], item[1] * item[3])
+                "INSERT INTO orders (user_id, total_amount, order_status) VALUES (%s, %s, %s)",
+                (user_id, total, 'Processing')
             )
-            # Update product stock
+            order_id = cur.lastrowid
+
+            # Add order items
+            for item in cart_items:
+                cur.execute(
+                    "INSERT INTO order_items (order_id, product_id, quantity, subtotal) VALUES (%s, %s, %s, %s)",
+                    (order_id, item[0], item[1], item[1] * item[3])
+                )
+                # Update product stock
+                cur.execute(
+                    "UPDATE products SET stock = stock - %s WHERE product_id = %s",
+                    (item[1], item[0])
+                )
+
+            # Update payment record with selected payment method
+            payment_method = request.form.get('payment_method', 'Not Specified')
             cur.execute(
-                "UPDATE products SET stock = stock - %s WHERE product_id = %s",
-                (item[1], item[0])
+                "UPDATE payments SET payment_method = %s WHERE order_id = %s",
+                (payment_method, order_id)
             )
 
-        # Create payment record
-        payment_method = request.form.get('payment_method', 'Credit Card')
-        cur.execute(
-            "INSERT INTO payments (order_id, user_id, amount, payment_status, payment_method) VALUES (%s, %s, %s, %s, %s)",
-            (order_id, user_id, total, 'Pending', payment_method)
-        )
-
-        # Clear the user's cart
-        cur.execute("DELETE FROM cart WHERE user_id = %s", (user_id,))
-        mysql.connection.commit()
-        flash('Order placed successfully!')
-        return redirect(url_for('order_confirmation', order_id=order_id))
+            # Clear the user's cart
+            cur.execute("DELETE FROM cart WHERE user_id = %s", (user_id,))
+            mysql.connection.commit()
+            flash('Order placed successfully!')
+            return redirect(url_for('order_confirmation', order_id=order_id))
+        except Exception as e:
+            mysql.connection.rollback()
+            flash('Error placing order. Please try again.')
+            return redirect(url_for('checkout'))
 
     return render_template('checkout.html',
         cart_items=cart_items,
@@ -282,28 +287,57 @@ def orders():
     try:
         user_id = session['user_id']
         cur = mysql.connection.cursor()
-        # Fetch all orders for the user
+        
+        # Debug print
+        print(f"Fetching orders for user_id: {user_id}")
+        
+        # Fetch all orders for the user with payment information
         cur.execute("""
-            SELECT o.order_id, o.created_at, o.total_amount, o.order_status, p.payment_status, p.payment_method
+            SELECT 
+                o.order_id, 
+                o.created_at, 
+                o.total_amount, 
+                o.order_status, 
+                COALESCE(p.payment_status, 'Pending') as payment_status, 
+                COALESCE(p.payment_method, 'Not Specified') as payment_method
             FROM orders o
-            JOIN payments p ON o.order_id = p.order_id
+            LEFT JOIN payments p ON o.order_id = p.order_id
             WHERE o.user_id = %s
             ORDER BY o.created_at DESC
         """, (user_id,))
         orders = cur.fetchall()
+        
+        # Debug print
+        print(f"Found {len(orders)} orders")
+        
         # Fetch order items for each order
         order_items = {}
         for order in orders:
             order_id = order[0]
             cur.execute("""
-                SELECT oi.product_id, oi.quantity, oi.subtotal, p.name, p.price, p.image_url
+                SELECT 
+                    oi.product_id, 
+                    oi.quantity, 
+                    oi.subtotal, 
+                    p.name, 
+                    p.price, 
+                    p.image_url
                 FROM order_items oi
                 JOIN products p ON oi.product_id = p.product_id
                 WHERE oi.order_id = %s
             """, (order_id,))
-            order_items[order_id] = cur.fetchall()
-        return render_template('orders.html', orders=orders, order_items=order_items)
+            items = cur.fetchall()
+            order_items[order_id] = items
+            
+            # Debug print
+            print(f"Order {order_id} has {len(items)} items")
+        
+        return render_template('orders.html', 
+                             orders=orders, 
+                             order_items=order_items,
+                             timedelta=timedelta)  # Pass timedelta to template
     except Exception as e:
+        print(f"Error in orders route: {str(e)}")  # Debug print
         flash('Error loading orders')
         return render_template('orders.html', orders=[], order_items={})
 

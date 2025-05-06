@@ -150,3 +150,83 @@ SELECT o.order_id, o.user_id, o.total_amount, 'Pending', 'Pay on Delivery'
 FROM orders o
 LEFT JOIN payments p ON o.order_id = p.order_id
 WHERE p.order_id IS NULL;
+
+-- Place Order Feature
+-- 1. Create new order
+INSERT INTO orders (user_id, total_amount, order_status)
+SELECT 
+    c.user_id,
+    SUM(p.price * c.quantity) as total_amount,
+    'Processing' as order_status
+FROM cart c
+JOIN products p ON c.product_id = p.product_id
+WHERE c.user_id = 1
+GROUP BY c.user_id;
+
+-- 2. Get the last inserted order_id
+SET @new_order_id = LAST_INSERT_ID();
+
+-- 3. Insert order items from cart
+INSERT INTO order_items (order_id, product_id, quantity, subtotal)
+SELECT 
+    @new_order_id,
+    c.product_id,
+    c.quantity,
+    (p.price * c.quantity) as subtotal
+FROM cart c
+JOIN products p ON c.product_id = p.product_id
+WHERE c.user_id = 1;
+
+-- 4. Create payment record with default values
+INSERT INTO payments (order_id, user_id, amount, payment_status, payment_method)
+SELECT 
+    @new_order_id,
+    user_id,
+    total_amount,
+    'Pending',
+    'Not Specified'
+FROM orders 
+WHERE order_id = @new_order_id;
+
+-- 5. Update product stock
+UPDATE products p
+JOIN cart c ON p.product_id = c.product_id
+SET p.stock = p.stock - c.quantity
+WHERE c.user_id = 1;
+
+-- 6. Clear the cart after successful order placement
+DELETE FROM cart WHERE user_id = 1;
+
+-- 7. Update payment method if provided
+UPDATE payments 
+SET payment_method = 'Credit Card'  -- This should be dynamic based on user selection
+WHERE order_id = @new_order_id;
+
+-- 8. Update order status to 'Processing'
+UPDATE orders 
+SET order_status = 'Processing'
+WHERE order_id = @new_order_id;
+
+-- 9. Add a trigger to automatically create payment record for new orders
+DELIMITER //
+CREATE TRIGGER after_order_insert
+AFTER INSERT ON orders
+FOR EACH ROW
+BEGIN
+    INSERT INTO payments (order_id, user_id, amount, payment_status, payment_method)
+    VALUES (NEW.order_id, NEW.user_id, NEW.total_amount, 'Pending', 'Not Specified');
+END//
+DELIMITER ;
+
+-- 10. Add a trigger to update order status when payment status changes
+DELIMITER //
+CREATE TRIGGER after_payment_update
+AFTER UPDATE ON payments
+FOR EACH ROW
+BEGIN
+    IF NEW.payment_status = 'Completed' THEN
+        UPDATE orders SET order_status = 'Processing' WHERE order_id = NEW.order_id;
+    END IF;
+END//
+DELIMITER ;
+

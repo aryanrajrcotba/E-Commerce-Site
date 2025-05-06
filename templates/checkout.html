@@ -23,12 +23,12 @@
                             </tr>
                         </thead>
                         <tbody>
-                            {% for item in order_items %}
+                            {% for item in cart_items %}
                             <tr>
-                                <td>{{ item.name }}</td>
-                                <td>{{ item.quantity }}</td>
-                                <td>₹{{ "%.2f"|format(item.price) }}</td>
-                                <td>₹{{ "%.2f"|format(item.subtotal) }}</td>
+                                <td>{{ item[2] }}</td>
+                                <td>{{ item[1] }}</td>
+                                <td>₹{{ "%.2f"|format(item[3]) }}</td>
+                                <td>₹{{ "%.2f"|format(item[1] * item[3]) }}</td>
                             </tr>
                             {% endfor %}
                         </tbody>
